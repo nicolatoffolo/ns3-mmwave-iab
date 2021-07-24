@@ -174,14 +174,14 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
-
+*/
 
 static void
 RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
 }
-*/
+
 
 
 static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
@@ -483,6 +483,10 @@ int main(int argc, char *argv[])
       Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-am-DL.txt");
 	    sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream1));
 
+      Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-RTT-am-DL.txt");
+	    ns3TcpSocket->TraceConnectWithoutContext("RTT", MakeBoundCallback (&RttChange, stream2));
+
+
       app->SetStartTime(MilliSeconds(500));
       app->SetStopTime(MilliSeconds(1200));
 
@@ -577,6 +581,9 @@ int main(int argc, char *argv[])
       AsciiTraceHelper asciiTraceHelper;
       Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-am-DL.txt");
 	    sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream1));
+      Ptr<OutputStreamWrapper> stream11 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-am-DL-socket.txt");
+	    ns3UdpSocket->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream11));
+      
 
       app->SetStartTime(MilliSeconds(500));
       app->SetStopTime(MilliSeconds(1200));

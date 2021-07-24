@@ -38,3 +38,4 @@ build/
 /.cproject
 /.project
 .vscode/c_cpp_properties.json
+*.json
