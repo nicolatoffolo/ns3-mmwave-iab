@@ -186,16 +186,14 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 */
 
 static void
-RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
+RttChange(Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
 {
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
+  *stream->GetStream() << Simulator::Now().GetSeconds() << "\t" << oldRtt.GetSeconds() << "\t" << newRtt.GetSeconds() << std::endl;
 }
 
-
-
-static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+static void Rx(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
 {
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+  *stream->GetStream() << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
 }
 
 /*static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
@@ -203,155 +201,164 @@ static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSstresh << "\t" << newSstresh << std::endl;
 }*/
 
-void ChangeSpeed(Ptr<Node> n, Vector speed)
-{
-  n->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(speed);
-}
-
-void PrintGnuplottableBuildingListToFile (std::string filename)
+/*
+void PrintGnuplottableBuildingListToFile(std::string filename)
 {
   std::ofstream outFile;
-  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
-  if (!outFile.is_open ())
-    {
-      std::string msg = "Can't open file " + filename;
-      NS_LOG_ERROR (msg);
-      return;
-    }
+  outFile.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+  if (!outFile.is_open())
+  {
+    std::string msg = "Can't open file " + filename;
+    std::cout << msg << std::endl;
+    //NS_LOG_ERROR (msg);
+    return;
+  }
   uint32_t index = 0;
-  for (BuildingList::Iterator it = BuildingList::Begin (); it != BuildingList::End (); ++it)
+  for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it)
+  {
+    ++index;
+    Box box = (*it)->GetBoundaries();
+    outFile << "set object " << index
+            << " rect from " << box.xMin << "," << box.yMin
+            << " to " << box.xMax << "," << box.yMax
+            << " front fs empty "
+            << std::endl;
+  }
+}
+
+void PrintGnuplottableUeListToFile(std::string filename)
+{
+  std::ofstream outFile;
+  outFile.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+  if (!outFile.is_open())
+  {
+    std::string msg = "Can't open file " + filename;
+    std::cout << msg << std::endl;
+    //NS_LOG_ERROR ("Can't open file " << filename);
+    return;
+  }
+  for (NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+  {
+    Ptr<Node> node = *it;
+    int nDevs = node->GetNDevices();
+    for (int j = 0; j < nDevs; j++)
     {
-      ++index;
-      Box box = (*it)->GetBoundaries ();
-      outFile << "set object " << index
-              << " rect from " << box.xMin  << "," << box.yMin
-              << " to "   << box.xMax  << "," << box.yMax
-              << " front fs empty "
+      Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice(j)->GetObject<MmWaveUeNetDevice>();
+      Vector pos = node->GetObject<MobilityModel>()->GetPosition();
+      outFile << "set label \"" << mmuedev->GetImsi()
+              << "\" at " << pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
               << std::endl;
     }
+  }
 }
 
-void PrintGnuplottableUeListToFile (std::string filename)
+void PrintGnuplottableEnbListToFile(std::string filename)
 {
   std::ofstream outFile;
-  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
-  if (!outFile.is_open ())
+  outFile.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+  if (!outFile.is_open())
+  {
+    std::string msg = "Can't open file " + filename;
+    std::cout << msg << std::endl;
+    //NS_LOG_ERROR ("Can't open file " << filename);
+    return;
+  }
+  for (NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+  {
+    Ptr<Node> node = *it;
+    int nDevs = node->GetNDevices();
+    for (int j = 0; j < nDevs; j++)
     {
-      NS_LOG_ERROR ("Can't open file " << filename);
-      return;
+      Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice(j)->GetObject<MmWaveEnbNetDevice>();
+      Vector pos = node->GetObject<MobilityModel>()->GetPosition();
+      outFile << "set label \"" << mmdev->GetCellId()
+              << "\" at " << pos.x << "," << pos.y
+              << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
+              << std::endl;
     }
-  for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
-    {
-      Ptr<Node> node = *it;
-      int nDevs = node->GetNDevices ();
-      for (int j = 0; j < nDevs; j++)
-        {
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
-          Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
-          outFile << "set label \"" << mmuedev->GetImsi ()
-                  << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
-                  << std::endl;
-        }
-    }
+  }
 }
 
-void PrintGnuplottableEnbListToFile (std::string filename)
+void PrintGnuplottableIabListToFile(std::string filename)
 {
   std::ofstream outFile;
-  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
-  if (!outFile.is_open ())
+  outFile.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+  if (!outFile.is_open())
+  {
+    std::string msg = "Can't open file " + filename;
+    std::cout << msg << std::endl;
+    //NS_LOG_ERROR ("Can't open file " << filename);
+    return;
+  }
+  for (NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+  {
+    Ptr<Node> node = *it;
+    int nDevs = node->GetNDevices();
+    for (int j = 0; j < nDevs; j++)
     {
-      NS_LOG_ERROR ("Can't open file " << filename);
-      return;
+      Ptr<MmWaveIabNetDevice> mmdev = node->GetDevice(j)->GetObject<MmWaveIabNetDevice>();
+      Vector pos = node->GetObject<MobilityModel>()->GetPosition();
+      outFile << "set label \"" << mmdev->GetCellId()
+              << "\" at " << pos.x << "," << pos.y
+              << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
+              << std::endl;
     }
-  for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
-    {
-      Ptr<Node> node = *it;
-      int nDevs = node->GetNDevices ();
-      for (int j = 0; j < nDevs; j++)
-        {
-          Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
-          Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
-          outFile << "set label \"" << mmdev->GetCellId ()
-                  << "\" at "<< pos.x << "," << pos.y
-                  << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
-                  << std::endl;
-        }
-    }
+  }
 }
 
-void PrintGnuplottableIabListToFile (std::string filename)
-{
-  std::ofstream outFile;
-  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
-  if (!outFile.is_open ())
-    {
-      NS_LOG_ERROR ("Can't open file " << filename);
-      return;
-    }
-  for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
-    {
-      Ptr<Node> node = *it;
-      int nDevs = node->GetNDevices ();
-      for (int j = 0; j < nDevs; j++)
-        {
-          Ptr<MmWaveIabNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveIabNetDevice> ();
-          Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
-          outFile << "set label \"" << mmdev->GetCellId ()
-                  << "\" at "<< pos.x << "," << pos.y
-                  << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
-                  << std::endl;
-        }
-    }
-}
-
-void 
-PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
+void PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 {
   std::ofstream logFile(fileName.c_str(), std::ofstream::app);
   logFile << Simulator::Now().GetSeconds() << " " << app->GetLost() << std::endl;
   logFile.close();
   Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName);
 }
-
-
-void
-ChangeSpeed(Ptr<Node>  n, Vector speed)
+*/
+void ChangeSpeed(Ptr<Node> n, Vector speed)
 {
-	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
+  n->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(speed);
 }
 
-void
-ChangePosIfNeeded(Ptr<Node> n, double xMin, double xMax, double yMin, double yMax, bool fixed)
+void ChangePosIfNeeded(Ptr<Node> n, double xMin, double xMax, double yMin, double yMax, bool fixed)
 {
-  Vector actual_pos = n->GetObject<ConstantVelocityMobilityModel> ()->DoGetPosition ();
+  Vector actual_pos = n->GetObject<ConstantVelocityMobilityModel>()->GetPosition();
   Vector new_speed;
-  if (fixed) {
-    if (actual_pos.y > yMax){
+  if (fixed)
+  {
+    if (actual_pos.y > yMax)
+    {
       new_speed = Vector(0, -2, 0);
     }
-    else if (actual_pos.y < yMin){
+    else if (actual_pos.y < yMin)
+    {
       new_speed = Vector(0, 2, 0);
     }
-    else {
+    else
+    {
       return;
     }
   }
-  else {
-    if (actual_pos.x > xMax){
+  else
+  {
+    if (actual_pos.x > xMax)
+    {
       new_speed = Vector(-2, 0, 0);
     }
-    else if (actual_pos.x < xMin){
+    else if (actual_pos.x < xMin)
+    {
       new_speed = Vector(2, 0, 0);
     }
-    else {
+    else
+    {
       return;
     }
-  ChangeSpeed(n, new_speed);
+    ChangeSpeed(n, new_speed);
+  }
 }
 
-int main(int argc, char *argv[]) { 
-  
+int main(int argc, char *argv[])
+{
+
   //enabling logging
   //LogComponentEnable("LteRlc", LOG_LEVEL_LOGIC);
   //LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
@@ -370,9 +377,9 @@ int main(int argc, char *argv[]) {
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
-	//command line params
+  //command line params
 
-	//command line params
+  //command line params
   CommandLine cmd;
   int stop_time = 2;
   unsigned run = 2;
@@ -383,14 +390,14 @@ int main(int argc, char *argv[]) {
   bool TCP_UL = false;
   uint32_t rlc_buf_size = 10;
   uint32_t inter_pck = 200;
-  uint32_t num_ue = 1;
-  uint32_t num_iab = 1;
-  uint32_t num_gnb = 1;
-  uint32_t num_buildings_row = 4;
-  uint32_t num_buildings_column = 4; 
+  int num_ue = 1;
+  int num_iab = 1;
+  int num_gnb = 1;
+  int num_buildings_row = 4;
+  int num_buildings_column = 4;
 
   cmd.AddValue("stop_time", "duration of the simulation", stop_time);
-	cmd.AddValue("run", "run for RNG", run);
+  cmd.AddValue("run", "run for RNG", run);
   cmd.AddValue("am", "RLC in AM if true", rlc_am);
   cmd.AddValue("UDP_DL", "if true, UDP downlink traffic will be instantiated", UDP_DL);
   cmd.AddValue("UDP_UL", "if true, UDP uplink traffic will be instantiated", UDP_UL);
@@ -427,12 +434,12 @@ int main(int argc, char *argv[]) {
   Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlc_am));
   Config::SetDefault("ns3::MmWaveRrIabMacScheduler::CqiTimerThreshold", UintegerValue(100));
 
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioEnbEnb", StringValue ("UMi-StreetCanyon"));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioEnbUe", StringValue ("UMi-StreetCanyon"));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioEnbIab", StringValue ("UMi-StreetCanyon"));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioIabIab", StringValue ("UMi-StreetCanyon"));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioIabUe", StringValue ("UMi-StreetCanyon"));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ScenarioUeUe", StringValue ("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioEnbEnb", StringValue("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioEnbUe", StringValue("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioEnbIab", StringValue("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioIabIab", StringValue("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioIabUe", StringValue("UMi-StreetCanyon"));
+  Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioUeUe", StringValue("UMi-StreetCanyon"));
 
   RngSeedManager::SetSeed(2);
   RngSeedManager::SetRun(run);
@@ -450,26 +457,28 @@ int main(int argc, char *argv[]) {
   mm_wave_helper->Initialize();
 
   //remote servers (only 1 in this case) def and topology connecting them to the core
-  Ptr<Node> pgw = epc_helper->GetPgwNode ();
+  Ptr<Node> pgw = epc_helper->GetPgwNode();
 
   NodeContainer remote_host_container;
-  remote_host_container.Create (1);
-  Ptr<Node> remote_host = remote_host_container.Get (0);
+  remote_host_container.Create(1);
+  Ptr<Node> remote_host = remote_host_container.Get(0);
   InternetStackHelper internet; //declared once
-  internet.Install (remote_host_container);
+  internet.Install(remote_host_container);
 
   PointToPointHelper p2p;
-  p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
-  p2p.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-  p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (10)));
-  NetDeviceContainer internet_devices = p2p.Install (pgw, remote_host);
+  p2p.SetDeviceAttribute("DataRate", DataRateValue(DataRate("100Gb/s")));
+  p2p.SetDeviceAttribute("Mtu", UintegerValue(1500));
+  p2p.SetChannelAttribute("Delay", TimeValue(MilliSeconds(10)));
+  NetDeviceContainer internet_devices = p2p.Install(pgw, remote_host);
   Ipv4AddressHelper ipv4;
-  ipv4.SetBase ("1.0.0.0", "255.0.0.0");
-  Ipv4InterfaceContainer ip_interfaces = ipv4.Assign (internet_devices); //0 is localhost, 1 is p2p device
+  ipv4.SetBase("1.0.0.0", "255.0.0.0");
+  Ipv4InterfaceContainer ip_interfaces = ipv4.Assign(internet_devices);
+  //0 is localhost, 1 is p2p device
+  Ipv4Address remote_host_addr = ip_interfaces.GetAddress(1);
 
   Ipv4StaticRoutingHelper ipv4_routing_helper;
-  Ptr<Ipv4StaticRouting> remote_host_static_routing = ipv4_routing_helper.GetStaticRouting (remote_host->GetObject<Ipv4> ());
-  remote_host_static_routing->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
+  Ptr<Ipv4StaticRouting> remote_host_static_routing = ipv4_routing_helper.GetStaticRouting(remote_host->GetObject<Ipv4>());
+  remote_host_static_routing->AddNetworkRouteTo(Ipv4Address("7.0.0.0"), Ipv4Mask("255.0.0.0"), 1);
 
   //positioning the building in a grid with streets separing them
   /*
@@ -488,19 +497,21 @@ int main(int argc, char *argv[]) {
   //////////     //////////
 
   */
-  double street_width = 10;  //meters
-  double building_widthX = 50;  //meters
-  double building_widthY = 50;  //meters
-  double building_height = 10;  //meters
+  double street_width = 10;    //meters
+  double building_widthX = 50; //meters
+  double building_widthY = 50; //meters
+  double building_height = 10; //meters
   std::vector<Ptr<Building>> building_vector;
 
-  for(int row_index = 0; row_index < num_buildings_row; ++row_index){
+  for (int row_index = 0; row_index < num_buildings_row; ++row_index)
+  {
     double min_y_building = row_index * (building_widthY + street_width);
-    for(int col_index = 0; col_index < num_buildings_column; ++col_index){
+    for (int col_index = 0; col_index < num_buildings_column; ++col_index)
+    {
       double min_x_building = col_index * (building_widthX + street_width);
-      Ptr <Building> building;
-      building = Create<Building> ();
-      building->SetBoundaries (Box (min_x_building, min_x_building + building_widthX, min_y_building, min_y_building + building_widthY, 0.0, building_height));
+      Ptr<Building> building;
+      building = Create<Building>();
+      building->SetBoundaries(Box(min_x_building, min_x_building + building_widthX, min_y_building, min_y_building + building_widthY, 0.0, building_height));
       building->SetNRoomsX(1);
       building->SetNRoomsY(1);
       building->SetNFloors(1);
@@ -516,174 +527,391 @@ int main(int argc, char *argv[]) {
   NodeContainer gnb_nodes;
   NodeContainer iab_nodes;
 
-  ue_nodes.Create (num_ue);
-  iab_nodes.Create (num_iab);
-  gnb_nodes.Create (num_gnb);
+  ue_nodes.Create(num_ue);
+  iab_nodes.Create(num_iab);
+  gnb_nodes.Create(num_gnb);
 
   //preliminary quantities
   double x_max = num_buildings_row * (building_widthX + street_width) - street_width;
   double y_max = num_buildings_column * (building_widthY + street_width) - street_width;
-  double area = x_max * y_max;
-  double gnb_height = building_height/2; //for now, the gnb is taller as half a building
-  double ue_height = 1.75; //meters
+  //double area = x_max * y_max;
+  double gnb_height = building_height / 2; //for now, the gnb is taller as half a building
+  double ue_height = 1.75;                 //meters
   std::vector<Vector> pos_gnb;
   std::vector<Vector> pos_iab;
   std::vector<Vector> pos_ue;
 
-  Ptr<UniformRandomVariable> coin = CreateObject<UniformRandomVariable> ();
-  Ptr<UniformRandomVariable> x_disc = CreateObject<UniformRandomVariable> ();
-  Ptr<UniformRandomVariable> x_cont = CreateObject<UniformRandomVariable> ();
-  Ptr<UniformRandomVariable> y_disc = CreateObject<UniformRandomVariable> ();
-  Ptr<UniformRandomVariable> y_cont = CreateObject<UniformRandomVariable> ();
-  x_disc->SetAttribute ("Min", DoubleValue (0.0));
-  x_disc->SetAttribute ("Max", DoubleValue (num_buildings_column - 1));
-  x_cont->SetAttribute ("Min", DoubleValue (0.0));
-  x_cont->SetAttribute ("Max", DoubleValue (x_max));
-  y_disc->SetAttribute ("Min", DoubleValue (0.0));
-  y_disc->SetAttribute ("Max", DoubleValue (num_buildings_row - 1));
-  y_cont->SetAttribute ("Min", DoubleValue (0.0));
-  y_cont->SetAttribute ("Max", DoubleValue (y_max));
+  Ptr<UniformRandomVariable> coin = CreateObject<UniformRandomVariable>();
+  Ptr<UniformRandomVariable> x_disc = CreateObject<UniformRandomVariable>();
+  Ptr<UniformRandomVariable> x_cont = CreateObject<UniformRandomVariable>();
+  Ptr<UniformRandomVariable> y_disc = CreateObject<UniformRandomVariable>();
+  Ptr<UniformRandomVariable> y_cont = CreateObject<UniformRandomVariable>();
+  x_disc->SetAttribute("Min", DoubleValue(0.0));
+  x_disc->SetAttribute("Max", DoubleValue(num_buildings_column - 1));
+  x_cont->SetAttribute("Min", DoubleValue(0.0));
+  x_cont->SetAttribute("Max", DoubleValue(x_max));
+  y_disc->SetAttribute("Min", DoubleValue(0.0));
+  y_disc->SetAttribute("Max", DoubleValue(num_buildings_row - 1));
+  y_cont->SetAttribute("Min", DoubleValue(0.0));
+  y_cont->SetAttribute("Max", DoubleValue(y_max));
 
-  for (int m = 0; m < num_gnb; ++m) {
+  for (int m = 0; m < num_gnb; ++m)
+  {
 
-    if (coin->GetValue() < 0.5) { //we choose x in discrete set and y in continuous set
+    double x_gnb;
+    double y_gnb;
+
+    if (coin->GetValue() < 0.5)
+    { //we choose x in discrete set and y in continuous set
       double temp = ceil(x_disc->GetValue());
-      double x_gnb = (temp * (building_widthX + street_width)) - street_width/2;
-      double y_gnb = y_cont->GetValue();
+      x_gnb = (temp * (building_widthX + street_width)) - street_width / 2;
+      y_gnb = y_cont->GetValue();
     }
-    else {  //we choose y in discrete set and x in continuous set
+    else
+    { //we choose y in discrete set and x in continuous set
       double temp = ceil(y_disc->GetValue());
-      double x_gnb = x_cont->GetValue ();
-      double y_gnb = (temp * (building_widthY + street_width)) - street_width/2;
+      x_gnb = x_cont->GetValue();
+      y_gnb = (temp * (building_widthY + street_width)) - street_width / 2;
     }
 
     Vector pos = Vector(x_gnb, y_gnb, gnb_height);
-    pos_iab.push_back (pos);
-  } 
-  
-  for (int k = 0; k < num_iab; ++k) {
+    pos_iab.push_back(pos);
+  }
 
-    if (coin->GetValue() < 0.5) { //we choose x in discrete set and y in continuous set
+  for (int k = 0; k < num_iab; ++k)
+  {
+
+    double x_iab;
+    double y_iab;
+
+    if (coin->GetValue() < 0.5)
+    { //we choose x in discrete set and y in continuous set
       double temp = ceil(x_disc->GetValue());
-      double x_iab = (temp * (building_widthX + street_width)) - street_width/2;
-      double y_iab = y_cont->GetValue();
+      x_iab = (temp * (building_widthX + street_width)) - street_width / 2;
+      y_iab = y_cont->GetValue();
     }
-    else {  //we choose y in discrete set and x in continuous set
+    else
+    { //we choose y in discrete set and x in continuous set
       double temp = ceil(y_disc->GetValue());
-      double x_iab = x_cont->GetValue ();
-      double y_iab = (temp * (building_widthY + street_width)) - street_width/2;
+      x_iab = x_cont->GetValue();
+      y_iab = (temp * (building_widthY + street_width)) - street_width / 2;
     }
 
     Vector pos = Vector(x_iab, y_iab, gnb_height);
-    pos_iab.push_back (pos);
+    pos_iab.push_back(pos);
   }
 
   std::vector<bool> fix_dir; //if =true, the user is fixed in x, else fixed in y
 
-  for (int n = 0; n < num_ue; ++n) {
+  for (int n = 0; n < num_ue; ++n)
+  {
 
-    if (coin->GetValue() < 0.5) { //we choose x in discrete set and y in continuous set
+    double x_ue;
+    double y_ue;
+
+    if (coin->GetValue() < 0.5)
+    { //we choose x in discrete set and y in continuous set
       double temp = ceil(x_disc->GetValue());
-      double x_ue = (temp * (building_widthX + street_width)) - street_width/2;
-      double y_ue = y_cont->GetValue();
-      fix_dir.push_back (true);
+      x_ue = (temp * (building_widthX + street_width)) - street_width / 2;
+      y_ue = y_cont->GetValue();
+      fix_dir.push_back(true);
     }
-    else {  //we choose y in discrete set and x in continuous set
+    else
+    { //we choose y in discrete set and x in continuous set
       double temp = ceil(y_disc->GetValue());
-      double x_ue = x_cont->GetValue ();
-      double y_ue = (temp * (building_widthY + street_width)) - street_width/2;
-      fix_dir.push_back (false);
+      x_ue = x_cont->GetValue();
+      y_ue = (temp * (building_widthY + street_width)) - street_width / 2;
+      fix_dir.push_back(false);
     }
 
     Vector pos = Vector(x_ue, y_ue, ue_height);
-    pos_ue.push_back (pos);
+    pos_ue.push_back(pos);
   }
 
   //NS_LOG_UNCOND("gNB "<< pos_gnb <<"\niab "<< pos_iab <<"\nue "<< pos_ue <<"\ntotalArea "<< area);
 
   //mobility Model (gNB)
-  Ptr<ListPositionAllocator> gnb_pos_alloc = CreateObject<ListPositionAllocator> ();
-  for (int m = 0; m < num_gnb; ++m) {
-    gnb_pos_alloc->Add (pos_gnb[m]);
+  Ptr<ListPositionAllocator> gnb_pos_alloc = CreateObject<ListPositionAllocator>();
+  for (int m = 0; m < num_gnb; ++m)
+  {
+    gnb_pos_alloc->Add(pos_gnb[m]);
   }
   MobilityHelper gnb_mobility;
-  gnb_mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  gnb_mobility.SetPositionAllocator (gnb_pos_alloc);
-  gnb_mobility.Install (gnb_nodes);
+  gnb_mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  gnb_mobility.SetPositionAllocator(gnb_pos_alloc);
+  gnb_mobility.Install(gnb_nodes);
 
   //mobility Model (IAB)
-  Ptr<ListPositionAllocator> iab_pos_alloc = CreateObject<ListPositionAllocator> ();
-  for (int k = 0; k < num_iab; ++k) {
-    iab_pos_alloc->Add (pos_iab[k]);
+  Ptr<ListPositionAllocator> iab_pos_alloc = CreateObject<ListPositionAllocator>();
+  for (int k = 0; k < num_iab; ++k)
+  {
+    iab_pos_alloc->Add(pos_iab[k]);
   }
   MobilityHelper iab_mobility;
-  iab_mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  iab_mobility.SetPositionAllocator (iab_pos_alloc);
-  iab_mobility.Install (iab_nodes);
-  
+  iab_mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  iab_mobility.SetPositionAllocator(iab_pos_alloc);
+  iab_mobility.Install(iab_nodes);
+
   //mobility Model (single UE)
-  Ptr<ListPositionAllocator> ue_pos_alloc = CreateObject<ListPositionAllocator> ();
-  for (int n = 0; n < num_ue; ++n) {
-    ue_pos_alloc->Add (pos_ue[n]);
+  Ptr<ListPositionAllocator> ue_pos_alloc = CreateObject<ListPositionAllocator>();
+  for (int n = 0; n < num_ue; ++n)
+  {
+    ue_pos_alloc->Add(pos_ue[n]);
   }
   MobilityHelper ue_mobility;
-  ue_mobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-  ue_mobility.SetPositionAllocator (ue_pos_alloc);
-  ue_mobility.Install (ue_nodes);
+  ue_mobility.SetMobilityModel("ns3::ConstantVelocityMobilityModel");
+  ue_mobility.SetPositionAllocator(ue_pos_alloc);
+  ue_mobility.Install(ue_nodes);
 
-  for (int n = 0; n < num_ue; ++n) { //the users will start to move at time 0.5 seconds
+  for (int n = 0; n < num_ue; ++n)
+  { //the users will start to move at time 0.5 seconds
     Vector new_speed;
 
-    if (fix_dir[n]) {
+    if (fix_dir[n])
+    {
       new_speed = Vector(0, 2, 0);
     }
-    else {
-      new_speed = Vector(2, 0, 0)
+    else
+    {
+      new_speed = Vector(2, 0, 0);
     }
-    
-    Simulator::Schedule (MilliSeconds (500), &ChangeSpeed, ue_nodes.Get (n), new_speed);
+
+    Simulator::Schedule(MilliSeconds(500), &ChangeSpeed, ue_nodes.Get(n), new_speed);
   }
 
-  for (int s = 1; s < stop_time/0.5; ++s) {
-    for (int n = 0; n < num_ue; ++n) { //the users will start to move at time 0.5 seconds
-    Simulator::Schedule (MilliSeconds (s*500), &ChangePosIfNeeded, ue_nodes.Get (n), 0, x_max, 0, y_max, fix_dir[n]);
+  for (int s = 1; s < stop_time / 0.5; ++s)
+  {
+    for (int n = 0; n < num_ue; ++n)
+    { //the users will start to move at time 0.5 seconds
+      Simulator::Schedule(MilliSeconds(s * 500), &ChangePosIfNeeded, ue_nodes.Get(n), 0, x_max, 0, y_max, fix_dir[n]);
     }
   }
 
   //let the buildings be aware of the nodes' position
-  BuildingsHelper::Install ((iab_nodes);
-  BuildingsHelper::Install (ue_nodes);gnb_nodes);
-  BuildingsHelper::Install 
-  BuildingsHelper::MakeMobilityModelConsistent ();
+  BuildingsHelper::Install(iab_nodes);
+  BuildingsHelper::Install(ue_nodes);
+  BuildingsHelper::Install(gnb_nodes);
+  BuildingsHelper::MakeMobilityModelConsistent();
 
   //MmWaveHelper creates relevant NetDevice instances for the different nodes
-  NetDeviceContainer gnb_mm_wave_devices = mm_wave_helper->InstallEnbDevice (gnb_nodes);
+  NetDeviceContainer gnb_mm_wave_devices = mm_wave_helper->InstallEnbDevice(gnb_nodes);
   NetDeviceContainer iab_mm_wave_devices;
-  iab_mm_wave_devices = mm_wave_helper->InstallIabDevice (iab_nodes);
-  NetDeviceContainer ue_mm_wave_devices = mm_wave_helper->InstallUeDevice (ue_nodes);
+  iab_mm_wave_devices = mm_wave_helper->InstallIabDevice(iab_nodes);
+  NetDeviceContainer ue_mm_wave_devices = mm_wave_helper->InstallUeDevice(ue_nodes);
 
   //create InternetStack for Ue devices and determination of default gw
-  internet.Install (ue_nodes);
+  internet.Install(ue_nodes);
   Ipv4InterfaceContainer ue_ip_interfaces;
-  ue_ip_interfaces = epc_helper->AssignUeIpv4Address (NetDeviceContainer (ue_mm_wave_devices));
+  ue_ip_interfaces = epc_helper->AssignUeIpv4Address(NetDeviceContainer(ue_mm_wave_devices));
 
-  for (uint32_t u = 0; u < num_ue; ++u) {
-    Ptr<Node> ue_node = ue_nodes.Get (u);
-    Ptr<Ipv4StaticRouting> ue_static_routing = ipv4_routing_helper.GetStaticRouting (ue_node->GetObject<Ipv4> ());
-    ue_static_routing->SetDefaultRoute (epc_helper->GetUeDefaultGatewayAddress (), 1);
+  for (int u = 0; u < num_ue; ++u)
+  {
+    Ptr<Node> ue_node = ue_nodes.Get(u);
+    Ptr<Ipv4StaticRouting> ue_static_routing = ipv4_routing_helper.GetStaticRouting(ue_node->GetObject<Ipv4>());
+    ue_static_routing->SetDefaultRoute(epc_helper->GetUeDefaultGatewayAddress(), 1);
   }
 
   NetDeviceContainer possibleBaseStations(gnb_mm_wave_devices, iab_mm_wave_devices);
-  mm_wave_helper->ChannelInitialization (ue_mm_wave_devices, gnb_mm_wave_devices, iab_mm_wave_devices);
-  mm_wave_helper->AttachIabToClosestEnb (iab_mm_wave_devices, gnb_mm_wave_devices);
-  mm_wave_helper->AttachToClosestEnbWithDelay (ue_mm_wave_devices, possibleBaseStations, MilliSeconds (300));
+  mm_wave_helper->ChannelInitialization(ue_mm_wave_devices, gnb_mm_wave_devices, iab_mm_wave_devices);
+  mm_wave_helper->AttachIabToClosestEnb(iab_mm_wave_devices, gnb_mm_wave_devices);
+  mm_wave_helper->AttachToClosestEnbWithDelay(ue_mm_wave_devices, possibleBaseStations, MilliSeconds(300));
 
   mm_wave_helper->ActivateDonorControllerIabSetup(gnb_mm_wave_devices, iab_mm_wave_devices,
                                                   gnb_nodes, iab_nodes);
 
   //applications setup in UEs and remote host
-  //TODO
-  
+  //TODO: check
+  uint16_t sinkPort1 = 20000;
+  uint16_t sinkPort2 = 30000;
+  //TCP applications setup in UE and remote hosts (downlink & uplink traffic)
+  for (int n = 0; n < num_ue; ++n)
+  {
+    sinkPort1++;
+    sinkPort2++;
+    if (TCP_DL || TCP_UL)
+    {
+
+      Address sinkAddress1(InetSocketAddress(ue_ip_interfaces.GetAddress(n), sinkPort1));
+      Address sinkAddress2(InetSocketAddress(remote_host_addr, sinkPort2));
+
+      PacketSinkHelper packetSinkHelper1("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort1));
+      PacketSinkHelper packetSinkHelper2("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort2));
+
+      ApplicationContainer sinkApps;
+
+      if (TCP_DL && TCP_UL)
+      {
+
+        sinkApps.Add(packetSinkHelper1.Install(ue_nodes.Get(n)));
+        sinkApps.Add(packetSinkHelper2.Install(remote_host));
+        sinkApps.Start(Seconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3TcpSocket1 = Socket::CreateSocket(remote_host_container.Get(0), TcpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app1 = CreateObject<MyApp>();
+        app1->Setup(ns3TcpSocket1, sinkAddress1, 1400, 5000000, DataRate("1000Mb/s"));
+
+        remote_host_container.Get(0)->AddApplication(app1);
+
+        AsciiTraceHelper asciiTraceHelper1;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper1.CreateFileStream("mmWave-tcp-data-am-DL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        app1->SetStartTime(MilliSeconds(500));
+        app1->SetStopTime(Seconds(stop_time));
+
+        Ptr<Socket> ns3TcpSocket2 = Socket::CreateSocket(ue_nodes.Get(n), TcpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app2 = CreateObject<MyApp>();
+        app2->Setup(ns3TcpSocket2, sinkAddress2, 1400, 5000000, DataRate("1000Mb/s"));
+
+        ue_nodes.Get(n)->AddApplication(app2);
+
+        AsciiTraceHelper asciiTraceHelper2;
+        Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream("mmWave-tcp-data-am-UL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(1)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream2));
+
+        app2->SetStartTime(MilliSeconds(500));
+        app2->SetStopTime(Seconds(stop_time));
+      }
+      else if (TCP_UL)
+      {
+
+        sinkApps.Add(packetSinkHelper2.Install(remote_host));
+        sinkApps.Start(MilliSeconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3TcpSocket = Socket::CreateSocket(ue_nodes.Get(n), TcpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app = CreateObject<MyApp>();
+        app->Setup(ns3TcpSocket, sinkAddress2, 1400, 5000000, DataRate("1000Mb/s"));
+
+        ue_nodes.Get(n)->AddApplication(app);
+
+        AsciiTraceHelper asciiTraceHelper;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream("mmWave-tcp-data-am-UL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        app->SetStartTime(MilliSeconds(500));
+        app->SetStopTime(Seconds(stop_time));
+      }
+      else
+      {
+
+        sinkApps.Add(packetSinkHelper1.Install(ue_nodes.Get(n)));
+        sinkApps.Start(Seconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3TcpSocket = Socket::CreateSocket(remote_host_container.Get(0), TcpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app = CreateObject<MyApp>();
+        app->Setup(ns3TcpSocket, sinkAddress1, 1400, 5000000, DataRate("1000Mb/s"));
+
+        remote_host_container.Get(0)->AddApplication(app);
+
+        AsciiTraceHelper asciiTraceHelper;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream("mmWave-tcp-data-am-DL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream("mmWave-tcp-RTT-am-DL-UE-" + std::to_string(n) + ".txt");
+        ns3TcpSocket->TraceConnectWithoutContext("RTT", MakeBoundCallback(&RttChange, stream2));
+
+        app->SetStartTime(MilliSeconds(500));
+        app->SetStopTime(Seconds(stop_time));
+      }
+    }
+
+    // UDP applications setup in UE and remote hosts (downlink & uplink traffic)
+    else
+    {
+
+      Address sinkAddress1(InetSocketAddress(ue_ip_interfaces.GetAddress(n), sinkPort1));
+      Address sinkAddress2(InetSocketAddress(remote_host_addr, sinkPort2));
+
+      PacketSinkHelper packetSinkHelper1("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort1));
+      PacketSinkHelper packetSinkHelper2("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort2));
+
+      ApplicationContainer sinkApps;
+
+      if (UDP_DL && UDP_UL)
+      {
+        sinkApps.Add(packetSinkHelper1.Install(ue_nodes.Get(n)));
+        sinkApps.Add(packetSinkHelper2.Install(remote_host));
+        sinkApps.Start(Seconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3UdpSocket1 = Socket::CreateSocket(remote_host_container.Get(0), UdpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app1 = CreateObject<MyApp>();
+        app1->Setup(ns3UdpSocket1, sinkAddress1, 1400, 5000000, DataRate("1000Mb/s"));
+
+        remote_host_container.Get(0)->AddApplication(app1);
+
+        AsciiTraceHelper asciiTraceHelper1;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper1.CreateFileStream("mmWave-udp-data-am-DL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        app1->SetStartTime(MilliSeconds(500));
+        app1->SetStopTime(Seconds(stop_time));
+
+        Ptr<Socket> ns3UdpSocket2 = Socket::CreateSocket(ue_nodes.Get(n), UdpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app2 = CreateObject<MyApp>();
+        app2->Setup(ns3UdpSocket2, sinkAddress2, 1400, 5000000, DataRate("1000Mb/s"));
+
+        ue_nodes.Get(n)->AddApplication(app2);
+
+        AsciiTraceHelper asciiTraceHelper2;
+        Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream("mmWave-udp-data-am-UL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(1)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream2));
+
+        app2->SetStartTime(MilliSeconds(500));
+        app2->SetStopTime(Seconds(stop_time));
+      }
+      else if (UDP_UL)
+      {
+        sinkApps.Add(packetSinkHelper2.Install(remote_host));
+        sinkApps.Start(Seconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3UdpSocket = Socket::CreateSocket(ue_nodes.Get(n), UdpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app = CreateObject<MyApp>();
+        app->Setup(ns3UdpSocket, sinkAddress2, 1400, 5000000, DataRate("1000Mb/s"));
+
+        ue_nodes.Get(n)->AddApplication(app);
+
+        AsciiTraceHelper asciiTraceHelper;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream("mmWave-udp-data-am-UL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        app->SetStartTime(MilliSeconds(500));
+        app->SetStopTime(Seconds(stop_time));
+      }
+      else
+      { //default: UDL_DL only
+        sinkApps.Add(packetSinkHelper1.Install(ue_nodes.Get(n)));
+        sinkApps.Start(MilliSeconds(0.));
+        sinkApps.Stop(Seconds(stop_time));
+
+        Ptr<Socket> ns3UdpSocket = Socket::CreateSocket(remote_host_container.Get(0), UdpSocketFactory::GetTypeId());
+
+        Ptr<MyApp> app = CreateObject<MyApp>();
+        app->Setup(ns3UdpSocket, sinkAddress1, 1400, 5000000, DataRate("1000Mb/s"));
+
+        remote_host_container.Get(0)->AddApplication(app);
+
+        AsciiTraceHelper asciiTraceHelper;
+        Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream("mmWave-udp-data-am-DL-UE-" + std::to_string(n) + ".txt");
+        sinkApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&Rx, stream1));
+
+        app->SetStartTime(MilliSeconds(500));
+        app->SetStopTime(Seconds(stop_time));
+      }
+    }
+  }
+
   mm_wave_helper->EnableTraces();
 
   //p2p.EnablePcapAll("complex_scen");
