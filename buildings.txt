@@ -1,0 +1,18 @@
+unset key
+set grid
+set object 1 rect from 0,0 to 50,50 front fs empty 
+set object 2 rect from 60,0 to 110,50 front fs empty 
+set object 3 rect from 120,0 to 170,50 front fs empty 
+set object 4 rect from 180,0 to 230,50 front fs empty 
+set object 5 rect from 0,60 to 50,110 front fs empty 
+set object 6 rect from 60,60 to 110,110 front fs empty 
+set object 7 rect from 120,60 to 170,110 front fs empty 
+set object 8 rect from 180,60 to 230,110 front fs empty 
+set object 9 rect from 0,120 to 50,170 front fs empty 
+set object 10 rect from 60,120 to 110,170 front fs empty 
+set object 11 rect from 120,120 to 170,170 front fs empty 
+set object 12 rect from 180,120 to 230,170 front fs empty 
+set object 13 rect from 0,180 to 50,230 front fs empty 
+set object 14 rect from 60,180 to 110,230 front fs empty 
+set object 15 rect from 120,180 to 170,230 front fs empty 
+set object 16 rect from 180,180 to 230,230 front fs empty 
