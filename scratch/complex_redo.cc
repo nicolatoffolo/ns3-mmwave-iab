@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
   bool TCP_UL = false;
   uint32_t rlc_buf_size = 10;
   uint32_t inter_pck = 200;
-  int num_ue = 2;
+  int num_ue = 4;
   double start_time = 0.5; //applications start time
   double stop_time = 0.6; //applications stop time
 
@@ -54,9 +54,6 @@ int main(int argc, char *argv[])
   Config::SetDefault("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue(rlc_buf_size * 1024 * 1024));
   Config::SetDefault("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue(rlc_buf_size * 1024 * 1024));
 
-  //TODO: The ns-3 time constructors accept an int as input. If you need to use non-integers,
-  //      use the smallest time unit which makes the desired value an integer (the smallest option is ns).
-  //      Float values cause problems
   Config::SetDefault("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(1)));
   Config::SetDefault("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(2)));
   Config::SetDefault("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
@@ -78,7 +75,7 @@ int main(int argc, char *argv[])
   Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioIabUe", StringValue("UMi-StreetCanyon"));
   Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ScenarioUeUe", StringValue("UMi-StreetCanyon"));
 
-  RngSeedManager::SetSeed(2);
+  RngSeedManager::SetSeed(15);
   RngSeedManager::SetRun(run);
 
   //mmWave module initialization and connection to the core
@@ -130,7 +127,7 @@ int main(int argc, char *argv[])
   NodeContainer iab_nodes;
 
   ue_nodes.Create(num_ue);
-  iab_nodes.Create(4); //4 IABs
+  iab_nodes.Create(1); //only 1 IAB
   gnb_nodes.Create(1); //only 1 gNB
 
   //preliminary quantities
@@ -150,9 +147,9 @@ int main(int argc, char *argv[])
 
   //mobility Model (IAB)
   Ptr<ListPositionAllocator> iab_pos_alloc = CreateObject<ListPositionAllocator>();
-  iab_pos_alloc->Add(Vector(x_max*0.25, y_max*0.5, antenna_height));
-  iab_pos_alloc->Add(Vector(x_max*0.75, y_max*0.5, antenna_height));
-  iab_pos_alloc->Add(Vector(x_max*0.5, y_max*0.25, antenna_height));
+  //iab_pos_alloc->Add(Vector(x_max*0.25, y_max*0.5, antenna_height));
+  //iab_pos_alloc->Add(Vector(x_max*0.75, y_max*0.5, antenna_height));
+  //iab_pos_alloc->Add(Vector(x_max*0.5, y_max*0.25, antenna_height));
   iab_pos_alloc->Add(Vector(x_max*0.5, y_max*0.75, antenna_height));
   MobilityHelper iab_mobility;
   iab_mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
@@ -168,7 +165,7 @@ int main(int argc, char *argv[])
     x_pos->SetAttribute ("Min", DoubleValue (0.0));
     x_pos->SetAttribute ("Max", DoubleValue (x_max));
     Ptr<UniformRandomVariable> y_pos = CreateObject<UniformRandomVariable>();
-    y_pos->SetAttribute ("Min", DoubleValue (0.0));
+    y_pos->SetAttribute ("Min", DoubleValue (y_max*0.625));
     y_pos->SetAttribute ("Max", DoubleValue (y_max));
     Ptr<UniformRandomVariable> z_pos = CreateObject<UniformRandomVariable>();
     z_pos->SetAttribute ("Min", DoubleValue (ue_height));
@@ -191,8 +188,7 @@ int main(int argc, char *argv[])
 
   //MmWaveHelper creates relevant NetDevice instances for the different nodes
   NetDeviceContainer gnb_mm_wave_devices = mm_wave_helper->InstallEnbDevice(gnb_nodes);
-  NetDeviceContainer iab_mm_wave_devices;
-  iab_mm_wave_devices = mm_wave_helper->InstallIabDevice(iab_nodes);
+  NetDeviceContainer iab_mm_wave_devices = mm_wave_helper->InstallIabDevice(iab_nodes);
   NetDeviceContainer ue_mm_wave_devices = mm_wave_helper->InstallUeDevice(ue_nodes);
 
   //create InternetStack for Ue devices and determination of default gw
@@ -201,7 +197,7 @@ int main(int argc, char *argv[])
   NetDeviceContainer possibleBaseStations(gnb_mm_wave_devices, iab_mm_wave_devices);
   mm_wave_helper->ChannelInitialization(ue_mm_wave_devices, gnb_mm_wave_devices, iab_mm_wave_devices);
   mm_wave_helper->AttachIabToClosestEnb(iab_mm_wave_devices, gnb_mm_wave_devices);
-  mm_wave_helper->AttachToClosestEnbWithDelay(ue_mm_wave_devices, possibleBaseStations, MilliSeconds(300));
+  mm_wave_helper->AttachToClosestEnbWithDelay(ue_mm_wave_devices, possibleBaseStations, MilliSeconds(50));
 
   mm_wave_helper->ActivateDonorControllerIabSetup(gnb_mm_wave_devices, iab_mm_wave_devices,
                                                   gnb_nodes, iab_nodes);
